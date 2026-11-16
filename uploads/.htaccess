@@ -1,0 +1,6 @@
+# En Apache: evitar ejecución de PHP en archivos cargados.
+php_flag engine off
+<FilesMatch "\.(php|phtml|phar|cgi|pl|py|sh)$">
+  Require all denied
+</FilesMatch>
+Options -ExecCGI
