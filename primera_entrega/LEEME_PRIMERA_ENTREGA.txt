@@ -1,0 +1,49 @@
+PRIMERA ENTREGA - proeyctofinalPPI_crafted
+Base de datos "crafted"
+
+ARCHIVOS DE ESTA CARPETA
+
+crafted_volcado.sql   Volcado completo de la base de datos (estructura + datos) en un solo
+                      archivo de texto. Es el archivo de la entrega.
+schema.sql            Script que crea la base y sus tablas (se usó para armar la base).
+seed.sql              Script que carga los datos de ejemplo (se usó para armar la base).
+
+QUÉ CONTIENE EL VOLCADO
+
+- Base de datos: crafted (utf8mb4)
+- 12 tablas: usuarios, sesiones_persistentes, perfiles, objetivos_usuarios, ingredientes,
+  presentaciones, productos, formulas, formula_ingredientes, carrito, compras, detalle_compra
+- 1 vista: historial_compras
+- 16 llaves foráneas
+- Datos: 35 productos, 31 ingredientes y 4 presentaciones.
+  Las tablas de usuarios, carrito y compras van vacías; se llenan al usar el sitio.
+
+El volcado se generó con mysqldump en MySQL 8.0 y se comprobó que se importa sin errores
+en MySQL 8.0 y en MariaDB 10.11.
+
+CÓMO IMPORTARLO (phpMyAdmin, con XAMPP o con Docker)
+
+1. Abrir phpMyAdmin.
+2. Ir a la pestaña Importar (sin seleccionar ninguna base).
+3. Elegir el archivo crafted_volcado.sql y pulsar Importar / Continuar.
+   No hace falta crear la base antes: el archivo la crea con el nombre crafted.
+4. Comprobar en la pestaña SQL:
+   SELECT COUNT(*) FROM crafted.productos;   -- debe dar 35
+
+CÓMO VOLVER A GENERAR EL VOLCADO EN TU COMPUTADORA
+
+Con Docker (cambia el nombre del contenedor y la contraseña por los tuyos):
+   docker exec NOMBRE_CONTENEDOR_DB mysqldump -u root -pCONTRASEÑA --databases crafted > crafted_volcado.sql
+
+Con XAMPP (desde la terminal):
+   C:\xampp\mysql\bin\mysqldump -u root --databases crafted > crafted_volcado.sql
+
+Desde phpMyAdmin: seleccionar la base crafted > Exportar > Continuar.
+
+DIAGRAMA DE LA BASE DE DATOS
+
+Después de importar: seleccionar la base crafted > Diseñador (Designer). Ahí se ven las
+tablas con sus relaciones; se puede capturar la pantalla o exportar en PDF.
+Ese diagrama se saca en tu computadora; no viene incluido en esta carpeta.
+
+El resto del proyecto web está en las carpetas principales de este paquete.
