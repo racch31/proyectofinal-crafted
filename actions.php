@@ -9,9 +9,16 @@ try {
         case 'register':
             $name=post_str('nombre',120);$email=mb_strtolower(post_str('correo',190));$pass=(string)($_POST['password']??'');$birth=post_str('fecha_nacimiento',10);$address=post_str('direccion_postal',450);
             $date=DateTimeImmutable::createFromFormat('!Y-m-d',$birth);
-            if(mb_strlen($name)<3 || !filter_var($email,FILTER_VALIDATE_EMAIL) || strlen($pass)<10 || !$date || $date->format('Y-m-d')!==$birth || $date>new DateTimeImmutable() || $date<new DateTimeImmutable('1900-01-01') || mb_strlen($address)<8) throw new DomainException('Revisa nombre, correo, contraseña, fecha y dirección.');
+            // Si algo falla, el formulario vuelve a mostrar lo capturado (nunca la contraseña).
+            $_SESSION['registro_previo']=['nombre'=>$name,'correo'=>$email,'fecha_nacimiento'=>$birth,'direccion_postal'=>$address];
+            if(mb_strlen($name)<3) throw new DomainException('Escribe tu nombre completo (mínimo 3 caracteres).');
+            if(!filter_var($email,FILTER_VALIDATE_EMAIL)) throw new DomainException('Escribe un correo electrónico válido.');
+            if(!$date || $date->format('Y-m-d')!==$birth || $date>new DateTimeImmutable() || $date<new DateTimeImmutable('1900-01-01')) throw new DomainException('Elige una fecha de nacimiento válida.');
+            if(strlen($pass)<10) throw new DomainException('La contraseña debe tener al menos 10 caracteres.');
+            if(mb_strlen($address)<8) throw new DomainException('Escribe tu dirección completa (mínimo 8 caracteres).');
             if(q('SELECT COUNT(*) FROM usuarios WHERE correo=?',[$email])->fetchColumn()) throw new DomainException('Ese correo ya está registrado.');
             q('INSERT INTO usuarios(nombre,correo,password_hash,fecha_nacimiento,direccion_postal) VALUES(?,?,?,?,?)',[$name,$email,password_hash($pass,PASSWORD_DEFAULT),$birth,$address]);
+            unset($_SESSION['registro_previo']);
             $_SESSION['usuario_id']=(int)db()->lastInsertId();session_regenerate_id(true);remember_user($_SESSION['usuario_id']);
             flash('success','¡Cuenta creada! Completa tu cuestionario.');go('cuestionario');
         case 'login':
