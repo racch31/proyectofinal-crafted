@@ -65,6 +65,25 @@ function clear_remember_cookie(): void {
 function require_user(): array { $u = current_user(); if (!$u) { flash('warning', 'Inicia sesión para continuar.'); go('acceso'); } return $u; }
 function require_admin(): array { $u = require_user(); if ($u['rol'] !== 'admin') { http_response_code(403); exit('Acceso restringido'); } return $u; }
 function count_cart(?array $u): int { return $u ? (int)q('SELECT COALESCE(SUM(cantidad),0) FROM carrito WHERE usuario_id=?', [$u['id']])->fetchColumn() : 0; }
+/** Escribe un número sin ceros sobrantes: 4.00000000 -> 4, 2.40 -> 2.4 */
+function num_limpio(float $n): string { $t = rtrim(rtrim(number_format($n, 4, '.', ''), '0'), '.'); return $t === '' || $t === '-0' ? '0' : $t; }
+/**
+ * Unidad en la que se captura un complemento o fibra. La base de datos guarda todo en gramos,
+ * pero las vitaminas y minerales se dosifican en miligramos o microgramos; así el formulario
+ * muestra "2.4 µg" en lugar de "0.0000024 g".
+ * Devuelve unidad, factor (unidad -> gramos), mínimo, máximo y paso en esa unidad.
+ */
+function unidad_ingrediente(array $ing): array {
+    $max = (float)$ing['maximo_g']; $min = (float)$ing['minimo_g'];
+    [$unidad, $factor] = $max >= 1 ? ['g', 1.0] : ($max >= 0.001 ? ['mg', 0.001] : ['µg', 0.000001]);
+    $minU = round($min / $factor, 4); $maxU = round($max / $factor, 4);
+    $multiplo = fn(float $x, float $n): bool => abs($x / $n - round($x / $n)) < 1e-6;
+    $paso = 0.1;
+    foreach ([100, 50, 10, 5, 1, 0.5, 0.1] as $n) {
+        if (($minU <= 0 || $n <= $minU + 1e-9) && $maxU / $n >= 8 - 1e-9 && $multiplo($minU, $n) && $multiplo($maxU, $n)) { $paso = $n; break; }
+    }
+    return ['unidad' => $unidad, 'factor' => $factor, 'min' => $minU, 'max' => $maxU, 'paso' => $paso];
+}
 function product_image(array $p): string {
     $foto = (string)($p['foto'] ?? '');
     // Solo rutas internas generadas o subidas: evita esquemas peligrosos o rutas externas.

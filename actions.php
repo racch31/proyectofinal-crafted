@@ -79,10 +79,13 @@ try {
             $extraList=q("SELECT * FROM ingredientes WHERE categoria IN ('suplemento','fibra') AND activo=1")->fetchAll();
             $lookup=[];foreach($extraList as $ing) $lookup[(int)$ing['id']]=$ing;
             $parts=[$baseId=>[$base,25.0],$saborId=>[$sabor,2.0]];$fibra=0.0;$totalGram=27.0;
-            foreach($extraPost as $id=>$val){$id=(int)$id;if(!isset($lookup[$id])) throw new DomainException('No se admite el ingrediente solicitado.');if(!is_scalar($val)||!is_numeric($val))throw new DomainException('Cantidad inválida.');$v=(float)$val;
-                if(!is_finite($v)||$v<0||abs($v-round($v,8))>0.000000001) throw new DomainException('Cantidad no válida (máximo 8 decimales).');if($v===0.0) continue;
-                $ing=$lookup[$id];$min=(float)$ing['minimo_g'];$max=(float)$ing['maximo_g'];
-                if($v+0.0000000001<$min || $v>$max+0.0000000001) throw new DomainException('Cantidad fuera del rango de catálogo para '.$ing['nombre']);
+            foreach($extraPost as $id=>$val){$id=(int)$id;if(!isset($lookup[$id])) throw new DomainException('No se admite el ingrediente solicitado.');if(!is_scalar($val)||!is_numeric($val))throw new DomainException('Cantidad inválida.');
+                // El formulario envía la cantidad en la unidad del ingrediente (g, mg o µg); aquí se convierte a gramos.
+                $ing=$lookup[$id];$un=unidad_ingrediente($ing);$capturado=(float)$val;
+                if(!is_finite($capturado)||$capturado<0) throw new DomainException('Cantidad no válida para '.$ing['nombre'].'.');
+                $v=round($capturado*$un['factor'],8);if($v===0.0) continue;
+                $min=(float)$ing['minimo_g'];$max=(float)$ing['maximo_g'];
+                if($v+0.0000000001<$min || $v>$max+0.0000000001) throw new DomainException('La cantidad de '.$ing['nombre'].' debe estar entre '.num_limpio($un['min']).' y '.num_limpio($un['max']).' '.$un['unidad'].' por porción.');
                 if($pack['formato']==='barrita' && !$ing['admite_barrita']) throw new DomainException('Un ingrediente no admite formato barrita.');
                 $parts[$id]=[$ing,$v];$totalGram+=$v;
                 if($ing['categoria']==='fibra')$fibra+=$v;
